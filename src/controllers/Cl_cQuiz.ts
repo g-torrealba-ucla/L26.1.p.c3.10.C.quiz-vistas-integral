@@ -4,28 +4,22 @@ import sQuiz from "../services/Cl_sQuiz.js";
 
 export default class Cl_cQuiz {
   private vista: I_vQuiz;
+
   constructor(vista: I_vQuiz) {
     this.vista = vista;
     this.vista.onEnviar(() => this.btEnviarOnClick());
   }
+
+  // ✅ MÉTODO DELGADO: Solo coordina
   async btEnviarOnClick() {
-    let quiz = new Cl_mQuiz({
+    const quiz = new Cl_mQuiz({
       cedula: this.vista.cedula,
       nombre: this.vista.nombre,
       respuesta1: this.vista.respuesta1,
       respuesta2: this.vista.respuesta2,
     });
-    let chkExiste = await sQuiz.existe(quiz.cedula);
-    if (chkExiste.ok === false) {
-      alert("Error: No se pudo conectar con el servidor");
-      return;
-    }
-    if (chkExiste.existe) {
-      alert("Ya existe un quiz registrado con esa cédula");
-      return;
-    }
-    sQuiz.agregar(quiz).then((resultado) => {
-      alert(resultado.mensaje);
-    });
+
+    const resultado = await sQuiz.agregar(quiz);
+    alert(resultado.mensaje);
   }
 }

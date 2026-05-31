@@ -20,76 +20,70 @@ export default class Cl_cEstudiantes {
     this.modelo = modelo;
     this.vista = vista;
     this.volverCallback = volverCallback;
+
+    // ✅ Solo configura eventos
     this.vista.onAgregar(() => this.onAgregar());
     this.vista.onModificar(() => this.onModificar());
     this.vista.onEliminar(() => this.onEliminar());
     this.vista.onVolver(() => this.onVolver());
+
     this.vista.mostrar();
     this.cargarEstudiantes();
   }
 
+  // ✅ MÉTODO DELGADO: Solo coordina
   private async onAgregar() {
-    let estudiante = new Cl_mEstudiante({
+    const estudiante = new Cl_mEstudiante({
       cedula: this.vista.cedula,
       nombre: this.vista.nombre,
     });
-    let chkExiste = await sEstudiantes.existe(estudiante.cedula);
-    if (chkExiste.ok === false) {
-      alert("Error: No se pudo conectar con el servidor");
-      return;
-    }
-    if (chkExiste.existe) {
-      alert("Ya existe un estudiante registrado con esa cédula");
-      return;
-    }
-    sEstudiantes.agregar(estudiante).then((resultado) => {
-      alert(resultado.mensaje);
-      if (resultado.ok) this.cargarEstudiantes();
-    });
-  }
 
-  private async onModificar() {
-    const tablaId = this.vista.cedula;
-    if (!tablaId) {
-      alert("Ingrese una cédula válida");
-      return;
-    }
-    const existe = await sEstudiantes.existe(tablaId);
-    if (existe.ok === false) {
-      alert("Error: No se pudo conectar con el servidor");
-      return;
-    }
-    if (!existe.existe) {
-      alert("No existe un estudiante registrado con esa cédula");
-      return;
-    }
-    if (
-      !confirm("Confirma modificar el estudiante con cédula " + tablaId + "?")
-    )
-      return;
-
-    const estudiante = new Cl_mEstudiante({
-      cedula: tablaId,
-      nombre: this.vista.nombre,
-    });
-    const resultado = await sEstudiantes.modificar(
-      tablaId,
-      estudiante.toJSON(),
-    );
+    const resultado = await sEstudiantes.agregar(estudiante);
     alert(resultado.mensaje);
     if (resultado.ok) this.cargarEstudiantes();
   }
 
-  private async onEliminar() {
-    const tablaId = this.vista.cedula;
-    if (!tablaId) {
+  // ✅ MÉTODO DELGADO: Solo coordina + confirmación UI
+  private async onModificar() {
+    const cedula = this.vista.cedula;
+
+    // ✅ Validación de UI (pertenece aquí)
+    if (!cedula) {
       alert("Ingrese una cédula válida");
       return;
     }
-    if (!confirm("Confirma eliminar el estudiante con cédula " + tablaId + "?"))
-      return;
 
-    const resultado = await sEstudiantes.eliminar(tablaId);
+    // ✅ Confirmación al usuario (pertenece aquí)
+    if (!confirm(`¿Modificar estudiante con cédula ${cedula}?`)) {
+      return;
+    }
+
+    const estudiante = new Cl_mEstudiante({
+      cedula,
+      nombre: this.vista.nombre,
+    });
+
+    const resultado = await sEstudiantes.modificar(cedula, estudiante.toJSON());
+    alert(resultado.mensaje);
+    if (resultado.ok) this.cargarEstudiantes();
+  }
+
+  // ✅ MÉTODO DELGADO: Solo coordina + confirmación UI
+  private async onEliminar() {
+    const cedula = this.vista.cedula;
+
+    // ✅ Validación de UI
+    if (!cedula) {
+      alert("Ingrese una cédula válida");
+      return;
+    }
+
+    // ✅ Confirmación al usuario
+    if (!confirm(`¿Eliminar estudiante con cédula ${cedula}?`)) {
+      return;
+    }
+
+    const resultado = await sEstudiantes.eliminar(cedula);
     alert(resultado.mensaje);
     if (resultado.ok) this.cargarEstudiantes();
   }
@@ -98,9 +92,10 @@ export default class Cl_cEstudiantes {
     this.vista.ocultar();
     this.volverCallback();
   }
+
   async cargarEstudiantes() {
-    let resultado = await sEstudiantes.getEstudiantes();
-    if (resultado.ok === false) {
+    const resultado = await sEstudiantes.getEstudiantes();
+    if (!resultado.ok) {
       alert("Error: No se pudo conectar con el servidor");
       return;
     }
